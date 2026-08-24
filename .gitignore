@@ -1,0 +1,69 @@
+# What this file does:
+# Git uses this file to decide which files to IGNORE (never commit to the repository).
+# Sensitive files like .env (which contains real passwords) must never be committed.
+# Build output folders like dist/ and node_modules/ are too large and regenerable to commit.
+
+# =====================
+# Sensitive files
+# These must NEVER be committed. They contain real credentials.
+# =====================
+.env
+.env.*
+!.env.example
+
+# AWS credentials (never commit these)
+*.pem
+credentials
+*_credentials
+aws_credentials
+
+# Terraform state files contain resource IDs and sometimes sensitive values
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.*
+*.tfstate
+*.tfstate.*
+
+# Terraform working directory (downloaded providers, cached data)
+.terraform/
+.terraform.lock.hcl
+
+# =====================
+# Node.js build artifacts
+# These are generated from source code and should not be committed
+# =====================
+node_modules/
+dist/
+build/
+coverage/
+
+# TypeScript compiled output
+*.js.map
+
+# =====================
+# Test and lint output
+# =====================
+.nyc_output/
+junit.xml
+
+# =====================
+# Editor and OS files
+# These are personal to each developer's machine
+# =====================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# =====================
+# Docker
+# =====================
+.docker/
+
+# =====================
+# Logs
+# =====================
+*.log
+logs/

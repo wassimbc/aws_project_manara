@@ -1,0 +1,37 @@
+# What this file does:
+# .dockerignore tells Docker which files to skip when building the image.
+# Docker copies your project folder into the build context before building.
+# Without this file it would copy node_modules and dist (large and unnecessary).
+
+# Skip installed packages (they will be reinstalled inside the container)
+node_modules/
+
+# Skip compiled output (will be recompiled inside the container)
+dist/
+
+# Skip test files (not needed in production image)
+tests/
+coverage/
+
+# Skip editor and system files
+.vscode/
+.idea/
+*.swp
+
+# Skip environment files (secrets must not go into images)
+.env
+.env.*
+
+# Skip git history
+.git/
+.gitignore
+
+# Skip Docker files themselves (not needed inside the image)
+Dockerfile
+.dockerignore
+
+# Skip readme files
+*.md
+
+# Skip TypeScript source config (already compiled in builder stage)
+

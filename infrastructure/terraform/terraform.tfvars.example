@@ -1,0 +1,40 @@
+# What this file does:
+# This is the example configuration file for Terraform variables.
+# Copy this file to terraform.tfvars and fill in your actual values.
+# terraform.tfvars is gitignored because it may contain sensitive info.
+# NEVER commit terraform.tfvars to git.
+
+# =====================
+# Required values (you MUST change these)
+# =====================
+
+# Your GitHub repository in owner/repo format.
+# Example: "johndoe/aws-project-manara"
+github_repo = "YOUR_GITHUB_USERNAME/aws-project-manara"
+
+# =====================
+# Optional values (safe to leave as defaults)
+# =====================
+
+aws_region  = "us-east-1"
+environment = "dev"
+project_name = "project6"
+
+# Set to false when not actively testing to save ~$1.08/day on the NAT Gateway
+enable_nat_gateway = true
+
+# Smallest ECS task size (saves cost, suitable for a demo project)
+ecs_task_cpu    = 256
+ecs_task_memory = 512
+
+# Run 1 copy of each service (1 = cheaper, 2 = high availability)
+ecs_desired_count = 1
+
+# Cheapest Redis node type
+redis_node_type = "cache.t3.micro"
+
+# Keep logs for 7 days (minimum, saves CloudWatch storage cost)
+log_retention_days = 7
+
+# Branch that triggers the CI/CD pipeline
+github_branch = "main"

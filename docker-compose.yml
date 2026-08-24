@@ -1,0 +1,149 @@
+# What this file does:
+# Docker Compose lets you run all three services plus Redis on your local machine with one command.
+# It creates a private network so the services can call each other by name (like auth, orders, notifications)
+# which mimics how AWS Cloud Map DNS works in production.
+#
+# To start everything: docker-compose up --build
+# To stop everything:  docker-compose down
+
+version: '3.9'
+
+# A shared network so all containers can find each other by name.
+# In production, AWS Cloud Map handles this with DNS names like auth.project6.local
+networks:
+  project6_network:
+    driver: bridge
+
+services:
+
+  # =====================
+  # Redis
+  # Redis is the shared data store used by all three services.
+  # It holds user accounts, sessions, orders, and notifications.
+  # In production, AWS ElastiCache Redis replaces this container.
+  # =====================
+  redis:
+    image: redis:7-alpine
+    container_name: project6_redis
+    ports:
+      - "6380:6379"
+    networks:
+      - project6_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    # Redis data is stored in memory only (no volume mount).
+    # Restarting Docker Compose clears all data, which is fine for local dev.
+
+  # =====================
+  # Auth Service
+  # Handles user registration, login, logout, and token validation.
+  # Port 3001 is exposed so you can test it directly from your browser or Postman.
+  # In production, only the ALB (Application Load Balancer) reaches this service.
+  # =====================
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: project6_auth
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      NODE_ENV: "local"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      # For local dev, use a simple test secret.
+      # In production, ECS pulls this from AWS Secrets Manager.
+      JWT_SECRET: "local_dev_jwt_secret_at_least_32_chars_long"
+      JWT_EXPIRES_IN: "15m"
+      SERVICE_NAME: "auth"
+      LOG_LEVEL: "info"
+    networks:
+      - project6_network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =====================
+  # Orders Service
+  # Handles order CRUD. Calls Auth to validate tokens.
+  # Calls Notifications when an order is created or changed.
+  # Port 3002 exposed for local testing.
+  # =====================
+  orders:
+    build:
+      context: ./services/orders
+      dockerfile: Dockerfile
+    container_name: project6_orders
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: "3002"
+      NODE_ENV: "local"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      # In production, AUTH_SERVICE_URL is auth.project6.local:3001 (Cloud Map DNS).
+      # In local Docker Compose, the container name 'auth' acts as the hostname.
+      AUTH_SERVICE_URL: "http://auth:3001"
+      NOTIFICATIONS_SERVICE_URL: "http://notifications:3003"
+      INTERNAL_SERVICE_SECRET: "local_dev_internal_secret"
+      SERVICE_NAME: "orders"
+      LOG_LEVEL: "info"
+    networks:
+      - project6_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =====================
+  # Notifications Service
+  # Receives internal messages from Orders when order status changes.
+  # Protected by an internal secret header so random internet users cannot send fake notifications.
+  # Port 3003 exposed for local testing.
+  # =====================
+  notifications:
+    build:
+      context: ./services/notifications
+      dockerfile: Dockerfile
+    container_name: project6_notifications
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: "3003"
+      NODE_ENV: "local"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      INTERNAL_SERVICE_SECRET: "local_dev_internal_secret"
+      SERVICE_NAME: "notifications"
+      LOG_LEVEL: "info"
+    networks:
+      - project6_network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

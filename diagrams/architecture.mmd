@@ -1,0 +1,67 @@
+%% AWS Project 6 Architecture Diagram
+%% No hyphens used in labels or definitions per project constraints
+
+graph TD
+    Client[Internet Client] --> ALB[Application Load Balancer]
+    
+    subgraph VPC[AWS VPC 10.0.0.0/16]
+        subgraph PublicSubnets[Public Subnets AZ_a and AZ_b]
+            ALB
+        end
+
+        subgraph PrivateSubnets[Private Subnets AZ_a and AZ_b]
+            AuthService[Auth Microservice ECS Fargate]
+            OrdersService[Orders Microservice ECS Fargate]
+            NotificationsService[Notifications Microservice ECS Fargate]
+            Redis[ElastiCache Redis Shared Cache and Session]
+        end
+
+        subgraph CloudMapDNS[AWS Cloud Map Private DNS project6.local]
+            DNS_Auth[auth.project6.local]
+            DNS_Orders[orders.project6.local]
+            DNS_Notifications[notifications.project6.local]
+        end
+    end
+
+    ALB -->|/api/auth/*| AuthService
+    ALB -->|/api/orders/*| OrdersService
+    ALB -->|/api/notifications/*| NotificationsService
+
+    OrdersService -->|Token validation via Cloud Map| DNS_Auth
+    DNS_Auth --> AuthService
+
+    OrdersService -->|Send notification via Cloud Map| DNS_Notifications
+    DNS_Notifications --> NotificationsService
+
+    AuthService --> Redis
+    OrdersService --> Redis
+    NotificationsService --> Redis
+
+    subgraph AWS_Services[AWS Management Services]
+        SecretsManager[AWS Secrets Manager]
+        CloudWatch[Amazon CloudWatch Logs and Alarms]
+        XRay[AWS X_Ray Distributed Tracing]
+        ECR[Amazon Elastic Container Registry]
+    end
+
+    AuthService --> SecretsManager
+    OrdersService --> SecretsManager
+    NotificationsService --> SecretsManager
+
+    AuthService --> CloudWatch
+    OrdersService --> CloudWatch
+    NotificationsService --> CloudWatch
+
+    AuthService --> XRay
+    OrdersService --> XRay
+    NotificationsService --> XRay
+
+    subgraph CICD[CI CD Pipeline]
+        GitHub[GitHub Repository] --> CodePipeline[AWS CodePipeline]
+        CodePipeline --> CodeBuild[AWS CodeBuild]
+        CodeBuild --> ECR
+        CodeBuild --> CodeDeploy[AWS CodeDeploy]
+        CodeDeploy -->|Blue Green Deployment| AuthService
+        CodeDeploy -->|Blue Green Deployment| OrdersService
+        CodeDeploy -->|Blue Green Deployment| NotificationsService
+    end

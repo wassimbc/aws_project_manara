@@ -1,67 +1,65 @@
-%% AWS Project 6 Architecture Diagram
-%% No hyphens used in labels or definitions per project constraints
-
 graph TD
-    Client[Internet Client] --> ALB[Application Load Balancer]
+    %% Custom Colors and Styles
+    classDef aws fill:#232F3E,stroke:#FF9900,stroke-width:2px,color:white;
+    classDef compute fill:#E7157B,stroke:#FFFFFF,stroke-width:2px,color:white;
+    classDef database fill:#3355CD,stroke:#FFFFFF,stroke-width:2px,color:white;
+    classDef network fill:#8C4FFF,stroke:#FFFFFF,stroke-width:2px,color:white;
+    classDef client fill:#18B478,stroke:#FFFFFF,stroke-width:2px,color:white;
+
+    %% Nodes
+    User([Internet Client]):::client
+
+    subgraph AWS_Cloud ["☁️ AWS Cloud (eu-north-1)"]
+        style AWS_Cloud fill:#F2F8FD,stroke:#232F3E,stroke-width:2px
+        
+        ALB[ALB + Target Groups<br/>Path-based Routing]:::network
+        
+        subgraph VPC ["Amazon VPC"]
+            style VPC fill:#FFFFFF,stroke:#8C4FFF,stroke-width:2px,stroke-dasharray: 5 5
+            
+            subgraph Fargate_Cluster ["📦 ECS Fargate (No Server Management)"]
+                style Fargate_Cluster fill:#F2F8FD,stroke:#E7157B,stroke-width:2px
+                
+                Auth[Auth Service]:::compute
+                Orders[Orders Service]:::compute
+                Notif[Notifications Service]:::compute
+            end
+            
+            subgraph Data_Layer ["💾 Persistent Data Layer"]
+                style Data_Layer fill:#F2F8FD,stroke:#3355CD,stroke-width:2px
+                
+                Redis[(ElastiCache Redis<br/>Shared Session Store)]:::database
+            end
+        end
+
+        SM[Secrets Manager<br/>Credentials Injection]:::aws
+        ECR[Amazon ECR<br/>Private Container Registry]:::aws
+        CW[CloudWatch Logs<br/>Centralized Logging]:::aws
+    end
+
+    %% Main Web Traffic Flow
+    User == "HTTP Request" ==> ALB
     
-    subgraph VPC[AWS VPC 10.0.0.0/16]
-        subgraph PublicSubnets[Public Subnets AZ_a and AZ_b]
-            ALB
-        end
+    ALB ==>|/api/auth| Auth
+    ALB ==>|/api/orders| Orders
+    ALB ==>|/api/notifications| Notif
 
-        subgraph PrivateSubnets[Private Subnets AZ_a and AZ_b]
-            AuthService[Auth Microservice ECS Fargate]
-            OrdersService[Orders Microservice ECS Fargate]
-            NotificationsService[Notifications Microservice ECS Fargate]
-            Redis[ElastiCache Redis Shared Cache and Session]
-        end
+    %% Backend Data Flow
+    Auth -. "State Management" .-> Redis
+    Orders -. "State Management" .-> Redis
+    Notif -. "State Management" .-> Redis
 
-        subgraph CloudMapDNS[AWS Cloud Map Private DNS project6.local]
-            DNS_Auth[auth.project6.local]
-            DNS_Orders[orders.project6.local]
-            DNS_Notifications[notifications.project6.local]
-        end
-    end
+    Auth -. "Runtime Injection" .-> SM
+    Orders -. "Runtime Injection" .-> SM
+    Notif -. "Runtime Injection" .-> SM
 
-    ALB -->|/api/auth/*| AuthService
-    ALB -->|/api/orders/*| OrdersService
-    ALB -->|/api/notifications/*| NotificationsService
+    ECR -.->|Pulls Images| Auth
+    ECR -.->|Pulls Images| Orders
+    ECR -.->|Pulls Images| Notif
 
-    OrdersService -->|Token validation via Cloud Map| DNS_Auth
-    DNS_Auth --> AuthService
+    Auth -.->|Streams Logs| CW
+    Orders -.->|Streams Logs| CW
+    Notif -.->|Streams Logs| CW
 
-    OrdersService -->|Send notification via Cloud Map| DNS_Notifications
-    DNS_Notifications --> NotificationsService
-
-    AuthService --> Redis
-    OrdersService --> Redis
-    NotificationsService --> Redis
-
-    subgraph AWS_Services[AWS Management Services]
-        SecretsManager[AWS Secrets Manager]
-        CloudWatch[Amazon CloudWatch Logs and Alarms]
-        XRay[AWS X_Ray Distributed Tracing]
-        ECR[Amazon Elastic Container Registry]
-    end
-
-    AuthService --> SecretsManager
-    OrdersService --> SecretsManager
-    NotificationsService --> SecretsManager
-
-    AuthService --> CloudWatch
-    OrdersService --> CloudWatch
-    NotificationsService --> CloudWatch
-
-    AuthService --> XRay
-    OrdersService --> XRay
-    NotificationsService --> XRay
-
-    subgraph CICD[CI CD Pipeline]
-        GitHub[GitHub Repository] --> CodePipeline[AWS CodePipeline]
-        CodePipeline --> CodeBuild[AWS CodeBuild]
-        CodeBuild --> ECR
-        CodeBuild --> CodeDeploy[AWS CodeDeploy]
-        CodeDeploy -->|Blue Green Deployment| AuthService
-        CodeDeploy -->|Blue Green Deployment| OrdersService
-        CodeDeploy -->|Blue Green Deployment| NotificationsService
-    end
+    %% Arrow Colors
+    linkStyle default stroke:#333333,stroke-width:2px;

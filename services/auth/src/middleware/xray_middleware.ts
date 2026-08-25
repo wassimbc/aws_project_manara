@@ -1,39 +1,41 @@
-// What this file does:
 // Wraps Express routes with AWS X-Ray tracing.
-// X-Ray records how long each HTTP request takes, which services were called,
-// and what the response code was. This creates the "service map" you see in the AWS console.
-//
-// When tracing is disabled (local development or tests), this middleware
-// is replaced with a simple no-op so your local environment works without an X-Ray daemon.
+// X-Ray is only activated when ENABLE_XRAY=true is explicitly set.
+// Without this guard, require('aws-xray-sdk') would attempt to connect
+// to a daemon socket at startup and crash the process if no daemon is running.
 
 import { Request, Response, NextFunction } from 'express';
-import { is_tracing_disabled } from '../config/config';
 
-// Only import X-Ray if we are in a traced environment.
-// Importing it unconditionally would cause errors in local dev (no daemon to connect to).
+// Only require aws-xray-sdk when explicitly enabled.
+// Gating on the env var prevents the SDK from crashing at module load time
+// when no X-Ray daemon is present (which is the case in ECS without a sidecar).
+const xray_enabled = process.env.ENABLE_XRAY === 'true';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const AWSXRay = is_tracing_disabled ? null : require('aws-xray-sdk');
+const AWSXRay = xray_enabled ? require('aws-xray-sdk') : null;
 
-// Open a new X-Ray segment for each incoming request.
-// A segment is a record of one unit of work (one HTTP request in this case).
 export function xray_open(service_name: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (is_tracing_disabled || !AWSXRay) {
+    if (!xray_enabled || !AWSXRay) {
       next();
       return;
     }
-    AWSXRay.express.openSegment(service_name)(req, res, next);
+    try {
+      AWSXRay.express.openSegment(service_name)(req, res, next);
+    } catch (_err) {
+      next();
+    }
   };
 }
 
-// Close the X-Ray segment after the response is sent.
-// This finalises the timing data and sends it to the X-Ray daemon.
 export function xray_close() {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (is_tracing_disabled || !AWSXRay) {
+  return (_req: Request, _res: Response, next: NextFunction): void => {
+    if (!xray_enabled || !AWSXRay) {
       next();
       return;
     }
-    AWSXRay.express.closeSegment()(req, res, next);
+    try {
+      AWSXRay.express.closeSegment()(_req, _res, next);
+    } catch (_err) {
+      next();
+    }
   };
 }

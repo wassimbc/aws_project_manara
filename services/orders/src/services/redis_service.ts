@@ -1,27 +1,27 @@
-// What this file does:
-// Creates a shared Redis client connection for the Orders service.
-// Orders are stored in Redis as hashes with keys like order:{order_id}.
-// Storing orders in shared Redis ensures stateless ECS task execution.
-
 import Redis from 'ioredis';
 import { config } from '../config/config';
 import { logger } from '../config/logger';
 
-function build_redis_url(): string {
-  if (config.REDIS_PASSWORD) {
-    return `redis://:${config.REDIS_PASSWORD}@${config.REDIS_HOST}:${config.REDIS_PORT}`;
-  }
-  return `redis://${config.REDIS_HOST}:${config.REDIS_PORT}`;
-}
-
-const redis_client = new Redis(build_redis_url(), {
+const options: any = {
+  host: config.REDIS_HOST,
+  port: config.REDIS_PORT,
   maxRetriesPerRequest: 3,
   retryStrategy: (times: number) => Math.min(times * 200, 2000),
   name: 'orders_service'
-});
+};
+
+if (config.REDIS_HOST.includes('amazonaws.com')) {
+  options.tls = {};
+}
+
+if (config.REDIS_PASSWORD && !config.REDIS_PASSWORD.startsWith('arn:aws:secretsmanager')) {
+  options.password = config.REDIS_PASSWORD;
+}
+
+const redis_client = new Redis(options);
 
 redis_client.on('connect', () => {
-  logger.info({ redis_host: config.REDIS_HOST }, 'Connected to Redis in Orders service');
+  logger.info({ redis_host: config.REDIS_HOST }, 'Connected to Redis');
 });
 
 redis_client.on('error', (err: Error) => {

@@ -6,6 +6,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { redis_client } from '../services/redis_service';
+import { logger } from '../config/logger';
 import { require_auth } from '../middleware/require_auth';
 import {
   create_order,
@@ -19,18 +20,16 @@ import { config } from '../config/config';
 
 const router = Router();
 
-// GET /health - Load balancer health check endpoint
-router.get('/health', async (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    await redis_client.ping();
-    res.status(200).json({
-      status: 'ok',
-      service: config.SERVICE_NAME,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    next(err);
-  }
+// GET /health and GET /api/orders/health - ALB health check endpoints (no auth required)
+// These must return 200 immediately. Do NOT ping Redis here.
+// Redis reconnection retries can take longer than the ALB's 5-second health check timeout,
+// causing "request aborted" even when the container is fully functional.
+router.get(['/health', '/api/orders/health'], (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    service: config.SERVICE_NAME,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Apply require_auth middleware to all /api/orders endpoints

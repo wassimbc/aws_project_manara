@@ -22,6 +22,7 @@ import {
 } from '../services/auth_service';
 import { App_Error } from '../middleware/error_handler';
 import { config } from '../config/config';
+import { logger } from '../config/logger';
 
 const router = Router();
 
@@ -44,20 +45,12 @@ function extract_bearer_token(req: Request): string | null {
 // The ALB calls this endpoint every 10 seconds to decide if the task is healthy.
 // If this returns a non-200 status, the ALB stops sending traffic to this task.
 // =====================
-router.get('/health', async (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Ping Redis to verify the connection is alive.
-    // If Redis is down, we return 503 so the ALB removes this task from rotation.
-    await redis_client.ping();
-
-    res.status(200).json({
-      status: 'ok',
-      service: config.SERVICE_NAME,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    next(err);
-  }
+router.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    service: config.SERVICE_NAME,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // =====================

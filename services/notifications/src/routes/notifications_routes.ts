@@ -15,17 +15,12 @@ import { config } from '../config/config';
 
 const router = Router();
 
-router.get('/health', async (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    await redis_client.ping();
-    res.status(200).json({
-      status: 'ok',
-      service: config.SERVICE_NAME,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    next(err);
-  }
+router.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    service: config.SERVICE_NAME,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // POST /api/notifications - Create notification (internal microservice call only)

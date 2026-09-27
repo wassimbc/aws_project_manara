@@ -4,7 +4,7 @@
 # Defines path-based routing listener rules.
 
 resource "aws_lb" "main" {
-  name               = "${var.project_name}_alb"
+  name               = "${var.project_name}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [var.alb_sg_id]
@@ -19,7 +19,7 @@ resource "aws_lb" "main" {
 resource "aws_lb_target_group" "blue" {
   for_each = toset(var.service_names)
 
-  name        = "${var.project_name}_${each.key}_blue_tg"
+  name        = "${var.project_name}-${each.key}-blue-tg"
   port        = var.service_ports[each.key]
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -47,7 +47,7 @@ resource "aws_lb_target_group" "blue" {
 resource "aws_lb_target_group" "green" {
   for_each = toset(var.service_names)
 
-  name        = "${var.project_name}_${each.key}_green_tg"
+  name        = "${var.project_name}-${each.key}-green-tg"
   port        = var.service_ports[each.key]
   protocol    = "HTTP"
   vpc_id      = var.vpc_id

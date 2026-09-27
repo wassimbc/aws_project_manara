@@ -2,7 +2,7 @@
 # Creates the S3 artifact bucket, CodeBuild projects, and CodePipeline pipeline.
 
 resource "aws_s3_bucket" "artifacts" {
-  bucket        = "${var.project_name}_pipeline_artifacts_${var.random_suffix}"
+  bucket        = "${var.project_name}-pipeline-artifacts-${var.random_suffix}"
   force_destroy = true
 
   tags = {

@@ -4,7 +4,7 @@
 # Protected by redis_sg security group (only ECS tasks can connect).
 
 resource "aws_elasticache_subnet_group" "main" {
-  name       = "${var.project_name}_redis_subnet_group"
+  name       = "${var.project_name}-redis-subnet-group"
   subnet_ids = var.private_subnet_ids
 }
 

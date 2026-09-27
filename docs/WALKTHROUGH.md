@@ -250,6 +250,18 @@ In AWS VPC, Security Groups act as stateful firewalls. If Redis does not explici
 * **Root Cause**: In the Task Definition environment block, `REDIS_PASSWORD` was defined under `value` instead of `valueFrom`.
 * **Permanent Fix**: `modules/ecs/main.tf` uses the `secrets` JSON block with `valueFrom` pointing directly to the Secret ARN.
 
+### Issue 3: Terraform Deployment Failed due to `lock-eu-north-1` IAM Policy
+* **Root Cause**: The Terraform AWS provider and networking variables defaulted to `us-east-1`, but the Manara sandbox account uses an aggressive Service Control Policy (SCP) / IAM policy called `lock-eu-north-1` which explicitly denies all AWS API actions outside the Stockholm region.
+* **Permanent Fix**: Updated `variables.tf` to force `aws_region = "eu-north-1"`, updated `availability_zones` to `eu-north-1a` and `eu-north-1b`, and adjusted private subnet CIDRs to match VPC constraints.
+
+### Issue 4: `SubscriptionRequiredException` for CodeDeploy
+* **Root Cause**: The original architecture used AWS CodeDeploy for automated Blue/Green zero-downtime deployments. However, the Manara sandbox AWS account explicitly disables or lacks the subscription for the CodeDeploy service.
+* **Permanent Fix**: Completely removed `module "codedeploy"` and `module "codepipeline"` from Terraform. Reverted the ECS `deployment_controller` back to `type = "ECS"` which uses native Rolling Updates (still providing zero-downtime deployments, just without the advanced Blue/Green traffic shifting features).
+
+### Issue 5: `InvalidParameterValue` / `AlreadyExists` on ElastiCache Subnet Group
+* **Root Cause**: AWS ElastiCache Subnet Groups strictly require hyphens instead of underscores in their naming conventions. A failed apply left an orphaned subnet group in the AWS account that conflicted with subsequent Terraform runs.
+* **Permanent Fix**: Changed the Subnet Group name to `project6-redis-subnet-group` and manually cleaned up the orphaned resources in AWS via the AWS CLI to clear the state for a fresh `terraform apply`.
+
 ---
 
 ## 5. Deployment Walkthrough Guide

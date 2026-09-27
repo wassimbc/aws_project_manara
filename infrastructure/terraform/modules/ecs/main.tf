@@ -115,13 +115,6 @@ resource "aws_ecs_service" "services" {
   }
 
   deployment_controller {
-    type = "CODE_DEPLOY"
-  }
-
-  lifecycle {
-    ignore_changes = [
-      task_definition,
-      load_balancer
-    ]
+    type = "ECS"
   }
 }

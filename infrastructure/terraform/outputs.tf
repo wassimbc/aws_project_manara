@@ -48,11 +48,7 @@ output "redis_host" {
   sensitive   = true
 }
 
-# The name of the CodePipeline pipeline
-output "pipeline_name" {
-  description = "Name of the CodePipeline pipeline. Use this to check pipeline status in AWS Console."
-  value       = module.codepipeline.pipeline_name
-}
+
 
 # The VPC ID
 output "vpc_id" {

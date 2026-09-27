@@ -8,9 +8,9 @@
 # =====================
 
 variable "aws_region" {
-  description = "The AWS region where all resources will be created. Default is us-east-1."
+  description = "The AWS region where all resources will be created. Must be eu-north-1 (Stockholm)."
   type        = string
-  default     = "us-east-1"
+  default     = "eu-north-1"
 }
 
 variable "project_name" {
@@ -36,9 +36,9 @@ variable "vpc_cidr" {
 }
 
 variable "availability_zones" {
-  description = "Two AZs for high availability. If one AZ has an outage, the other still runs."
+  description = "Two AZs for high availability in eu-north-1."
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["eu-north-1a", "eu-north-1b"]
 }
 
 variable "public_subnet_cidrs" {
@@ -50,7 +50,7 @@ variable "public_subnet_cidrs" {
 variable "private_subnet_cidrs" {
   description = "IP ranges for private subnets (one per AZ). ECS tasks and Redis live here."
   type        = list(string)
-  default     = ["10.0.11.0/24", "10.0.12.0/24"]
+  default     = ["10.0.128.0/20", "10.0.144.0/20"]
 }
 
 variable "enable_nat_gateway" {

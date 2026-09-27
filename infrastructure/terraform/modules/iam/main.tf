@@ -44,7 +44,7 @@ resource "aws_iam_role" "execution" {
 
   tags = {
     Name    = "${var.project_name}_ecs_execution_role"
-    Purpose = "ECS agent pulls images, pushes logs, reads secrets"
+    Purpose = "ECS agent pulls images and pushes logs and reads secrets"
   }
 }
 

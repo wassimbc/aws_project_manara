@@ -166,54 +166,7 @@ module "ecs" {
   cloudmap_namespace    = var.cloudmap_namespace
 }
 
-# =====================
-# Module: CodeDeploy
-# Sets up blue/green deployments for each ECS service.
-# When a new container image is pushed, CodeDeploy creates a new set of tasks
-# (green), waits for them to be healthy, shifts traffic from the old set (blue)
-# to the new set (green), then removes the old set.
-# If anything goes wrong, it automatically rolls back to blue.
-# =====================
-module "codedeploy" {
-  source = "./modules/codedeploy"
 
-  project_name             = var.project_name
-  environment              = var.environment
-  service_names            = var.service_names
-  ecs_cluster_name         = module.ecs.cluster_name
-  ecs_service_names        = module.ecs.service_names
-  alb_listener_arn         = module.alb.http_listener_arn
-  alb_test_listener_arn    = module.alb.test_listener_arn
-  blue_target_group_names  = module.alb.blue_target_group_names
-  green_target_group_names = module.alb.green_target_group_names
-  codedeploy_role_arn      = module.iam.codedeploy_role_arn
-}
-
-# =====================
-# Module: CodePipeline
-# Connects GitHub to CodeBuild to CodeDeploy.
-# When you push to the main branch, the pipeline automatically:
-# 1. Pulls the source code
-# 2. Runs tests and builds Docker images
-# 3. Pushes images to ECR
-# 4. Triggers a blue/green deployment
-# =====================
-module "codepipeline" {
-  source = "./modules/codepipeline"
-
-  project_name           = var.project_name
-  environment            = var.environment
-  aws_region             = var.aws_region
-  random_suffix          = random_id.suffix.hex
-  github_repo            = var.github_repo
-  github_branch          = var.github_branch
-  service_names          = var.service_names
-  ecr_repository_urls    = module.ecr.repository_urls
-  pipeline_role_arn      = module.iam.pipeline_role_arn
-  codebuild_role_arn     = module.iam.codebuild_role_arn
-  codedeploy_app_names   = module.codedeploy.app_names
-  codedeploy_group_names = module.codedeploy.deployment_group_names
-}
 
 # =====================
 # Module: Monitoring

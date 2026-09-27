@@ -118,11 +118,11 @@ Below are the screenshots capturing the deployed AWS resources and the successfu
 
 | ECR Repositories |
 | :---: |
-| ![ECR Repositories](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122524.png) |
+| ![ECR Repositories](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122546.png) |
 
 | ECS Fargate Cluster & Running Services |
 | :---: |
-| ![ECS Services](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122546.png) |
+| ![ECS Services](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122524.png) |
 
 | Target Group Healthy Targets |
 | :---: |

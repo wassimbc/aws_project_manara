@@ -19,7 +19,10 @@ resource "aws_ecr_repository" "services" {
 
   # IMMUTABLE means once you push an image with tag :abc123, you cannot
   # overwrite it. This protects production deployments from accidental overwrites.
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
+
+  # Force delete allows terraform destroy to work even if images were pushed
+  force_delete = true
 
   # Scan each image for known security vulnerabilities when it is pushed.
   # Results appear in the ECR console and can be viewed with:

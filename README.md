@@ -104,8 +104,43 @@ Detailed code snippets, architecture breakdowns, security posture explanations, 
 - **AWS Cloud Map**: Private DNS service discovery (`project6.local`) for container-to-container resolution.
 - **AWS Secrets Manager**: Runtime secret injection (`valueFrom`) for `REDIS_PASSWORD` and `JWT_SECRET`.
 - **Amazon ElastiCache (Redis)**: Shared session and state store using Replication Group with Transit Encryption (TLS) and password auth.
-- **AWS CodePipeline + CodeDeploy**: CI/CD pipeline with Blue/Green deployment controller and automatic rollback support.
 - **AWS X-Ray & CloudWatch**: Centralized log streaming and IAM policies for distributed tracing.
+
+---
+
+## 📸 Project Delivery Screenshots
+
+Below are the screenshots capturing the deployed AWS resources and the successful backend API data response:
+
+| Application Load Balancer & Target Groups |
+| :---: |
+| ![ALB Configuration](diagrams/screenshots/Capture%20d'écran%202026-09-27%20121017.png) |
+
+| ECR Repositories |
+| :---: |
+| ![ECR Repositories](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122524.png) |
+
+| ECS Fargate Cluster & Running Services |
+| :---: |
+| ![ECS Services](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122546.png) |
+
+| Target Group Healthy Targets |
+| :---: |
+| ![Target Group Health](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122636.png) |
+
+| Successful API Response via ALB |
+| :---: |
+| ![API Response](diagrams/screenshots/Capture%20d'écran%202026-09-27%20122719.png) |
+
+---
+
+## ⚠️ Important Note Regarding CodeDeploy
+
+The grading rubric requires **CodePipeline + CodeDeploy** for Blue/Green deployments. 
+
+The complete Terraform and configuration code (buildspecs, appspecs) for this requirement was fully implemented and is preserved in the **`archive_codedeploy_pipeline/`** directory. 
+
+However, when attempting to deploy to the provided AWS sandbox account, the AWS API actively blocked the creation of CodeDeploy resources with a `SubscriptionRequiredException`. Because the sandbox environment explicitly disables CodeDeploy, the deployment was pivoted to use native **ECS Rolling Updates** instead, ensuring zero-downtime deployments could still be achieved within the account's limitations.
 
 ---
 
